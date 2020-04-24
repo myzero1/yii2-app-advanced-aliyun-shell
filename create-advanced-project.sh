@@ -20,6 +20,6 @@ composer --no-update require yidas/yii2-bower-asset -vvv
 echo '----------------------------------------------install'
 composer install -vvv
 echo '----------------------------------------------@bower'
-sed -i "s/'\@bower/'\@bower' => '\@vendor\/yidas\/yii2-bower-asset\/bower',\n\t\t\/\/'@bower/g" common\\config\\main.php
+sed -i "s/'\@bower' => '\@vendor\/bower-asset'/'\@bower' => '\@vendor\/yidas\/yii2-bower-asset\/bower',\n\t\t\/\/'\@bower' => '\@ vendor\/bower-asset_deprecated'/g" common/config/main.php
 echo '----------------------------------------------init dev overwrite'
 php init --env=Development --overwrite=n
