@@ -3,11 +3,6 @@
 set -e # 一但有任何一个语句返回非真的值，则退出bash,需要取消用set +e
 set -u # 当使用未初始化的变量时，让bash自动退出
 
-function initProject(){
-    echo -e "\033[40;32m >>>>>>--------------------------initProject------------------------- \033[0m" # 绿色
-    php init --env=Development --overwrite=n
-}
-
 function updateRequire(){
     echo -e "\033[40;32m >>>>>>--------------------------updateRequire------------------------- \033[0m" # 绿色
     projectName=$1
@@ -20,7 +15,22 @@ function updateRequire(){
     composer --no-update require yidas/yii2-bower-asset -vvv
     composer update -vvv
     # sed -i "s/'\@bower/'\@bower' => '\@vendor\/yidas\/yii2-bower-asset\/bower',\n\t\t\/\/'@bower/g" common\\config\\main.php
-    sed -i "s/'\@bower' => '\@vendor\/bower-asset/'\@bower' => '\@vendor\/yidas\/yii2-bower-asset\/bower',\n\t\t\/\/'@bower' => '@bak-vendor\/bower-asset/g" common\\config\\main.php
+    # sed -i "s/'\@bower' => '\@vendor\/bower-asset/'\@bower' => '\@vendor\/yidas\/yii2-bower-asset\/bower',\n\t\t\/\/'@bower' => '@bak-vendor\/bower-asset/g" common\\config\\main.php
+    yidas=`cat common/config/main-local.php | grep 'yidas' | grep -v 'grep' |  wc -l`
+    if [ $yidas -eq 0 ] ; then
+        sed -i "2a\    'aliases' => [" common\\config\\main-local.php
+        sed -i "3a\        '@bower' => '@vendor/yidas/yii2-bower-asset/bower'," common\\config\\main-local.php
+        sed -i "4a\    ]," common\\config\\main-local.php
+    fi
+
+}
+
+function initProject(){
+    echo -e "\033[40;32m >>>>>>--------------------------initProject------------------------- \033[0m" # 绿色
+    projectName=$1
+    cd $projectName
+    php init --env=Development --overwrite=n
+    cd ../
 }
 
 function createProject(){
@@ -31,8 +41,10 @@ function createProject(){
     # composerHome=$(echo $composerHomeInfo | sed -n 's/\[//p' | sed -n 's/\]//p' | sed -n 's/home//p' | sed 's/ //')
     # echo '{}' > ${composerHome}'\\composer.json'
 
+    set +e
     # timeout 30 composer create-project yiisoft/yii2-app-advanced $projectName -vvv #这命令最多执行30s
     timeout 30 composer create-project --no-install yiisoft/yii2-app-advanced $projectName -vvv #这命令最多执行30s
+    set -e
 }
 
 function updateGlobalMirrors(){
@@ -91,13 +103,10 @@ function main(){
 
     if [ $myOperation = "install" ];then
         createProject $myProjectName
+        initProject $myProjectName
     fi
 
     updateRequire $myProjectName $myMirrors
-
-    if [ $myOperation = "install" ];then
-        initProject
-    fi
 
     finish_time=`date --date='0 days ago' "+%Y-%m-%d %H:%M:%S"`
     duration=$(($(($(date +%s -d "$finish_time")-$(date +%s -d "$start_time")))))
